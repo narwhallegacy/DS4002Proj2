@@ -31,6 +31,38 @@ setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
 #setwd("jonathan's File Path")
 
 
+teams.08 = read.csv("Team Average Stats/2008_team_results.csv", header = FALSE)[-c(1),]
+names(teams.08) = read.csv("Team Average Stats/2008_team_results.csv", header = FALSE)[1,]
+teams.09 = read.csv("Team Average Stats/2009_team_results.csv", header = FALSE)[-c(1),]
+names(teams.09) = read.csv("Team Average Stats/2009_team_results.csv", header = FALSE)[1,]
+teams.10 = read.csv("Team Average Stats/2010_team_results.csv", header = FALSE)[-c(1),]
+names(teams.10) = read.csv("Team Average Stats/2010_team_results.csv", header = FALSE)[1,]
+teams.11 = read.csv("Team Average Stats/2011_team_results.csv", header = FALSE)[-c(1),]
+names(teams.11) = read.csv("Team Average Stats/2011_team_results.csv", header = FALSE)[1,]
+teams.12 = read.csv("Team Average Stats/2012_team_results.csv", header = FALSE)[-c(1),]
+names(teams.12) = read.csv("Team Average Stats/2012_team_results.csv", header = FALSE)[1,]
+teams.13 = read.csv("Team Average Stats/2013_team_results.csv", header = FALSE)[-c(1),]
+names(teams.13) = read.csv("Team Average Stats/2013_team_results.csv", header = FALSE)[1,]
+teams.14 = read.csv("Team Average Stats/2014_team_results.csv", header = FALSE)[-c(1),]
+names(teams.14) = read.csv("Team Average Stats/2014_team_results.csv", header = FALSE)[1,]
+teams.15 = read.csv("Team Average Stats/2015_team_results.csv", header = FALSE)[-c(1),]
+names(teams.15) = read.csv("Team Average Stats/2015_team_results.csv", header = FALSE)[1,]
+teams.16 = read.csv("Team Average Stats/2016_team_results.csv", header = FALSE)[-c(1),]
+names(teams.16) = read.csv("Team Average Stats/2016_team_results.csv", header = FALSE)[1,]
+teams.17 = read.csv("Team Average Stats/2017_team_results.csv", header = FALSE)[-c(1),]
+names(teams.17) = read.csv("Team Average Stats/2017_team_results.csv", header = FALSE)[1,]
+teams.18 = read.csv("Team Average Stats/2018_team_results.csv", header = FALSE)[-c(1),]
+names(teams.18) = read.csv("Team Average Stats/2018_team_results.csv", header = FALSE)[1,]
+teams.19 = read.csv("Team Average Stats/2019_team_results.csv", header = FALSE)[-c(1),]
+names(teams.19) = read.csv("Team Average Stats/2019_team_results.csv", header = FALSE)[1,]
+teams.20 = read.csv("Team Average Stats/2020_team_results.csv", header = FALSE)[-c(1),]
+names(teams.20) = read.csv("Team Average Stats/2020_team_results.csv", header = FALSE)[1,]
+teams.21 = read.csv("Team Average Stats/2021_team_results.csv", header = FALSE)[-c(1),]
+names(teams.21) = read.csv("Team Average Stats/2021_team_results.csv", header = FALSE)[1,]
+teams.22 = read.csv("Team Average Stats/2022_team_results.csv", header = FALSE)[-c(1),]
+names(teams.22) = read.csv("Team Average Stats/2022_team_results.csv", header = FALSE)[1,]
+
+
 ```
 
 
