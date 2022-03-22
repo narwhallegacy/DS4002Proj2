@@ -1,0 +1,36 @@
+---
+title: "DataSynthesis"
+author: "glc5pn"
+date: "3/22/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tm)
+library(topicmodels)
+library(SnowballC)
+library(ggwordcloud)
+library(RColorBrewer)
+library(syuzhet)
+library(lexicon)
+library(tidytext)
+library(textdata)
+library(xgboost)
+library(parallel)
+library(caret)
+library(stringr)
+library(MASS)
+```
+
+
+```{r read-in, include = FALSE}
+setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
+#setwd("jonathan's File Path")
+
+
+```
+
+
