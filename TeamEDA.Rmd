@@ -30,14 +30,24 @@ library(MASS)
 setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
 #setwd("jonathan's File Path")
 
-teamsStatsAll = read.csv("teamsData.csv")[,2:46]
+teamStatsAll = read.csv("teamStatsData.csv")[,-c(1)]
+teamResultsAll = read.csv("teamResultsData.csv")[,-c(1)]
+gameData = read.csv("gamesData.csv")[,-c(1)]
 
+
+teamAll = merge(teamResultsAll, teamStatsAll, by.x = "team", by.y = "TeamName")
+```
+
+
+```{r Get Tempo for all teams}
+#TODO this
 ```
 
 
 ```{r EDA}
 #Team winrate and field goal rates
 
-ggplot(data = teamsAll, aes())
+ggplot(data = teamAll, aes(x = eFG..Def, y = eFG., color = winRate)) + geom_point() + xlab("Effective Field Goals (Defence)") + ylab("Effective Field Goals (Offense)") + ggtitle("Offensive and Defensive Field Goal Rates and Team WinRate")
 
 ```
+
