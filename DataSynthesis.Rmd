@@ -63,6 +63,31 @@ teams.22 = read.csv("Team Average Stats/2022_team_results.csv", header = FALSE)[
 names(teams.22) = read.csv("Team Average Stats/2022_team_results.csv", header = FALSE)[1,]
 
 
+addYear = function(teamData) {
+  year = substr(deparse(substitute(teamData)),nchar(deparse(substitute(teamData)))-1,nchar(deparse(substitute(teamData))))
+  teamData$team = paste(year,teamData$team,sep = '.')
+  return(teamData)
+}
+
+teams.08 = addYear(teams.08)
+teams.09 = addYear(teams.09)
+teams.10 = addYear(teams.10)
+teams.11 = addYear(teams.11)
+teams.12 = addYear(teams.12)
+teams.13 = addYear(teams.13)
+teams.14 = addYear(teams.14)
+teams.15 = addYear(teams.15)
+teams.16 = addYear(teams.16)
+teams.17 = addYear(teams.17)
+teams.18 = addYear(teams.18)
+teams.19 = addYear(teams.19)
+teams.20 = addYear(teams.20)
+teams.21 = addYear(teams.21)
+teams.22 = addYear(teams.22)
+
+
+teamsAll = rbind(teams.08,teams.09,teams.10,teams.11,teams.12,teams.13,teams.14,teams.15,teams.16,teams.17,teams.18,teams.19,teams.20,teams.21,teams.22)
+
 ```
 
 
