@@ -30,6 +30,14 @@ library(MASS)
 setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
 #setwd("jonathan's File Path")
 
-teamsAll = read.csv("teamsData.csv")[,2:46]
+teamsStatsAll = read.csv("teamsData.csv")[,2:46]
+
+```
+
+
+```{r EDA}
+#Team winrate and field goal rates
+
+ggplot(data = teamsAll, aes())
 
 ```

@@ -99,7 +99,7 @@ for (i in 1:nrow(teamResultsAll)) {
 
 teamResultsAll = teamResultsAll %>% mutate("winRate" = winRate)
 
-write.csv(teamResultsAll, "teamsData.csv")
+write.csv(teamResultsAll, "teamResultsData.csv")
 ```
 
 
@@ -166,6 +166,9 @@ teamStats.22 = addStatsYear(teamStats.22)
 teamStatsAll = rbind(teamStats.08,teamStats.09,teamStats.10,teamStats.11,teamStats.12,teamStats.13,teamStats.14,teamStats.15,teamStats.16,teamStats.17,teamStats.18,teamStats.19,teamStats.20,teamStats.21,teamStats.22)
 
 teamStatsAll = teamStatsAll[,1:37]
+
+
+write.csv(teamStatsAll, "teamStatsData.csv")
 ```
 
 
