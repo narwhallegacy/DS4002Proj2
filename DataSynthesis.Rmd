@@ -30,6 +30,9 @@ setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
 
 
 ```{r read-in, include = FALSE}
+gameData = read.csv("gamesData.csv")[,-c(1)]
+
+
 teamResults.08 = read.csv("Team Results Stats/2008_team_results.csv", header = FALSE)[-c(1),]
 names(teamResults.08) = read.csv("Team Results Stats/2008_team_results.csv", header = FALSE)[1,]
 teamResults.09 = read.csv("Team Results Stats/2009_team_results.csv", header = FALSE)[-c(1),]
@@ -167,8 +170,20 @@ teamStatsAll = rbind(teamStats.08,teamStats.09,teamStats.10,teamStats.11,teamSta
 
 teamStatsAll = teamStatsAll[,1:37]
 
+# team = teamStatsAll$TeamName[3]
+
+teamStatsAll = teamStatsAll %>% mutate("Winrate" = 0)
+
+for (i in 1:nrow(teamStatsAll)) {
+  team = teamStatsAll$TeamName[i]
+  index = match(team, teamResultsAll$team)
+  wr = teamResultsAll$winRate[index]
+  teamStatsAll$Winrate[i] = wr
+  
+}
 
 write.csv(teamStatsAll, "teamStatsData.csv")
+names(teamStatsAll)
 ```
 
 
@@ -205,6 +220,8 @@ addYearGames = function(gameData) {
   year = substr(deparse(substitute(gameData)),nchar(deparse(substitute(gameData)))-1,nchar(deparse(substitute(gameData))))
   gameData$team1 = paste(year,gameData$team1,sep = '.')
   gameData$team2 = paste(year,gameData$team2,sep = '.')
+  gameData$winner = paste(year, gameData$winner, sep=".")
+  gameData$loser = paste(year, gameData$loser, sep=".")
   return(gameData)
 }
 
@@ -225,6 +242,8 @@ games.22 = addYearGames(games.22)
 
 
 gamesAll = rbind(games.09,games.10,games.11,games.12,games.13,games.14,games.15,games.16,games.17,games.18,games.19,games.20,games.21,games.22)
+
+
 
 
 write.csv(gamesAll, "gamesData.csv")

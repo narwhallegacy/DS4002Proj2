@@ -1,0 +1,71 @@
+---
+title: "LinearModelBuilding"
+author: "glc5pn"
+date: "4/12/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tm)
+library(topicmodels)
+library(SnowballC)
+library(ggwordcloud)
+library(RColorBrewer)
+library(syuzhet)
+library(lexicon)
+library(tidytext)
+library(textdata)
+library(xgboost)
+library(parallel)
+library(caret)
+library(stringr)
+library(MASS)
+
+```
+
+```{r read-in, echo = FALSE}
+setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
+#setwd("jonathan's File Path")
+
+teamStatsAll = read.csv("teamStatsData.csv")[,-c(1)]
+teamResultsAll = read.csv("teamResultsData.csv")[,-c(1)]
+gameData = read.csv("gamesData.csv")[,-c(1)]
+names(teamStatsAll) = c("TeamName","eFG%","Rk","eFG% Def","Rk.1","FTR","Rk.2",
+                        "FTR Def","Rk.3","OR%","Rk.4","DR%","Rk.5","TO%","Rk.6",
+                        "TO% Def.","Rk.7","3P%","rk","3pD%","rk.1","2p%",
+                        "rk.2","2p%D","rk.3","ft%","rk.4","ft%D","rk.5","3P rate",
+                        "rk.6","3P rate D","rk.7","arate","rk.8","arateD","rk.9",
+                        "Winrate")
+
+teamAll = merge(teamResultsAll, teamStatsAll, by.x = "team", by.y = "TeamName")
+```
+
+
+```{r add stats}
+modelData = matrix(nrow = nrow(gameData), ncol = (ncol(gameData) + 2*ncol(teamAll)))
+modelData = as.data.frame(modelData)
+names(modelData)[1:ncol(gameData)] = names(gameData)
+
+team1.names = paste("T1",names(teamAll),sep="")
+team2.names = paste("T2",names(teamAll),sep="")
+names(modelData) = c(names(gameData),team1.names,team2.names)
+
+
+modelData[,1:ncol(gameData)] = gameData
+
+for (i in nrow(gameData)) {
+  team1 = gameData$team1[i]
+  team2 = gameData$team2[i]
+  
+  index.1 = match(team1, teamAll$team)
+  index.2 = match(team2, teamAll$team)
+  
+  modelData[i,(ncol(gameData)+1):ncol(modelData)] = c(teamAll[index.1,],teamAll[index.2,])
+}
+
+```
+
+
