@@ -1,0 +1,109 @@
+---
+title: "NCAA March Madness Model"
+author: "Jonathan Yu"
+date: "3/22/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caret)
+library(xgboost)
+library(plotly)
+
+```
+
+# Player Head-to-Head Model 
+```{r}
+Players08 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2008Players.csv")
+Players09 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2009Players.csv")
+Players10 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2010Players.csv")
+Players11 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2011Players.csv")
+Players12 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2012Players.csv")
+Players13 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2013Players.csv")
+Players14 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2014Players.csv")
+Players15 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2015Players.csv")
+Players16 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2016Players.csv")
+Players17 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2017Players.csv")
+Players18 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2018Players.csv")
+Players19 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2019Players.csv")
+Players20 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2020Players.csv")
+Players21 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2021Players.csv")
+Players22 <- read.csv("/Users/jonathanyu/Documents/GitHub/DS4002Proj2/Player Average Stats/2022Players.csv")
+
+```
+
+# Height function
+```{r}
+fixheights <- function(playerslist){
+  heightlist <- list()
+  for(height in playerslist$ht){
+    if(str_detect(height, "Jun") == TRUE){
+        height <- str_replace(height, "Jun", "6")
+    }
+    else if(str_detect(height, "Jul") == TRUE){
+        height <- str_replace(height, "Jul", "7")
+    }
+    else if(str_detect(height, "May") == TRUE){
+        height <- str_replace(height, "May", "5")
+    }
+  
+  height <- str_replace(height, "([0-9]+)-([0-9]+)", "\\2.\\1")
+  height <- as.numeric(height)
+  heightlist <- append(heightlist, height)
+  }
+  heightlist <- replace(heightlist, heightlist == 0.6, 6.0)
+  heightlist <- replace(heightlist, heightlist == 0.7, 7.0)
+  heightlist <- replace(heightlist, heightlist == 0.5, 5.0)
+  heightlist <- as.data.frame(heightlist)
+  heightlist <- as.data.frame(t(heightlist))
+  return(heightlist)
+  
+  }
+```
+
+```{r}
+playerslist <- list(Players08, Players09, Players10, Players11, Players12, Players13, Players14, Players15, Players16, Players17, Players18, Players19, Players20, Players21, Players22)
+
+# Fix heights 
+Players08$ht <- fixheights(Players08)$V1
+Players09$ht <- fixheights(Players09)$V1
+Players10$ht <- fixheights(Players10)$V1
+Players11$ht <- fixheights(Players11)$V1
+Players12$ht <- fixheights(Players12)$V1
+Players13$ht <- fixheights(Players13)$V1
+Players14$ht <- fixheights(Players14)$V1
+Players15$ht <- fixheights(Players15)$V1
+Players16$ht <- fixheights(Players16)$V1
+Players17$ht <- fixheights(Players17)$V1
+Players18$ht <- fixheights(Players18)$V1
+Players19$ht <- fixheights(Players19)$V1
+Players20$ht <- fixheights(Players20)$V1
+Players21$ht <- fixheights(Players21)$V1
+Players22$ht <- fixheights(Players22)$V1
+```
+
+# Early EDA 
+```{r}
+Players08
+PtsvADRTG <- ggplot(Players08, aes(pts, adrtg, colour = conf)) + geom_point()
+ggplotly(PtsvADRTG)
+ggplotly(ggplot(Players22, aes(pts, adrtg, colour = conf)) + geom_point())
+```
+
+# Create Teams
+```{r}
+numbers <- list("08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22")
+i <- 1
+for(players in playerslist){
+  uniqueteam <- unique(players$team)
+  for(this_team in uniqueteam){
+    assign(paste0(this_team, numbers[i]), subset(Players08, team == this_team))
+  }
+  i <- i + 1
+}
+
+
+```
+
