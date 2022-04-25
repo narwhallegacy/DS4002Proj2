@@ -1,0 +1,182 @@
+---
+title: "TeamWinProbModel"
+output: html_document
+date: '2022-04-24'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caret)
+library(xgboost)
+library(plotly)
+```
+
+# Super Schedule 
+```{r}
+SuperSked08 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2008_super_sked.csv", header = TRUE)
+SuperSked09 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2009_super_sked.csv", header = FALSE)
+SuperSked10 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2010_super_sked.csv", header = FALSE)
+SuperSked11 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2011_super_sked.csv", header = FALSE)
+SuperSked12 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2012_super_sked.csv", header = FALSE)
+SuperSked13 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2013_super_sked.csv", header = FALSE)
+SuperSked14 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2014_super_sked.csv", header = FALSE)
+SuperSked15 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2015_super_sked.csv", header = FALSE)
+SuperSked16 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2016_super_sked.csv", header = FALSE)
+SuperSked17 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2017_super_sked.csv", header = FALSE)
+SuperSked18 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2018_super_sked.csv", header = FALSE)
+SuperSked19 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2019_super_sked.csv", header = FALSE)
+SuperSked20 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2020_super_sked.csv", header = FALSE)
+SuperSked21 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2021_super_sked.csv", header = FALSE)
+SuperSked22 <- read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\Team Game Stats\\2022_super_sked.csv", header = FALSE)
+```
+
+# Fix Column names for SuperSked
+```{r}
+colnames(SuperSked09) <- colnames(SuperSked08)
+colnames(SuperSked10) <- colnames(SuperSked08)
+colnames(SuperSked11) <- colnames(SuperSked08)
+colnames(SuperSked12) <- colnames(SuperSked08)
+colnames(SuperSked13) <- colnames(SuperSked08)
+colnames(SuperSked14) <- colnames(SuperSked08)
+colnames(SuperSked15) <- colnames(SuperSked08)
+colnames(SuperSked16) <- colnames(SuperSked08)
+colnames(SuperSked17) <- colnames(SuperSked08)
+colnames(SuperSked18) <- colnames(SuperSked08)
+colnames(SuperSked19) <- colnames(SuperSked08)
+colnames(SuperSked20) <- colnames(SuperSked08)
+colnames(SuperSked21) <- colnames(SuperSked08)
+colnames(SuperSked22) <- colnames(SuperSked08)
+
+```
+# Add Binary Result Column to Supersked Function 
+```{r}
+addbinary <- function(supersked){
+  for(row in 1:nrow(supersked)){
+    team1 <- supersked[row, "team1"]
+    team2 <- supersked[row, "team2"]
+    winner <- supersked[row, "winner"]
+    if(team1 == winner){
+      supersked[row, "binaryresult"] <- 1
+    }
+    else{
+      supersked[row, "binaryresult"] <- 0
+    }
+  }
+  return(supersked)
+}
+```
+
+# add binary results column to supersked
+```{r}
+SuperSked08 <- addbinary(SuperSked08)
+SuperSked09 <- addbinary(SuperSked09)
+SuperSked10 <- addbinary(SuperSked10)
+SuperSked11 <- addbinary(SuperSked11)
+SuperSked12 <- addbinary(SuperSked12)
+SuperSked13 <- addbinary(SuperSked13)
+SuperSked14 <- addbinary(SuperSked14)
+SuperSked15 <- addbinary(SuperSked15)
+SuperSked16 <- addbinary(SuperSked16)
+SuperSked17 <- addbinary(SuperSked17)
+SuperSked18 <- addbinary(SuperSked18)
+SuperSked19 <- addbinary(SuperSked19)
+SuperSked20 <- addbinary(SuperSked20)
+SuperSked21 <- addbinary(SuperSked21)
+SuperSked22 <- addbinary(SuperSked22)
+
+```
+
+# March Madness Games
+```{r}
+SuperSked08$muid <- as.numeric(SuperSked08$muid)
+SuperSked09$muid <- as.numeric(SuperSked09$muid)
+SuperSked10$muid <- as.numeric(SuperSked10$muid)
+SuperSked11$muid <- as.numeric(SuperSked11$muid)
+SuperSked12$muid <- as.numeric(SuperSked12$muid)
+SuperSked13$muid <- as.numeric(SuperSked13$muid)
+SuperSked14$muid <- as.numeric(SuperSked14$muid)
+SuperSked15$muid <- as.numeric(SuperSked15$muid)
+SuperSked16$muid <- as.numeric(SuperSked16$muid)
+SuperSked17$muid <- as.numeric(SuperSked17$muid)
+SuperSked18$muid <- as.numeric(SuperSked18$muid)
+SuperSked19$muid <- as.numeric(SuperSked19$muid)
+SuperSked20$muid <- as.numeric(SuperSked20$muid)
+SuperSked21$muid <- as.numeric(SuperSked21$muid)
+SuperSked22$muid <- as.numeric(SuperSked22$muid)
+
+MarchMadness08 <- subset(SuperSked08, muid >= 284000000)
+MarchMadness09 <- subset(SuperSked09, muid >= 294000000)
+MarchMadness10 <- subset(SuperSked10, (conf == 3 & venue == 1) & (date != "4/1/10" & date != "3/30/10" & muid != 300782250 & date != "3/17/10"))
+MarchMadness11 <- subset(SuperSked11, (conf == 3 & venue == 1) & (date != "3/29/11" & muid != 310740103 & muid != 310900333))
+MarchMadness12 <- subset(SuperSked12, (conf == 3 & venue == 1) & (muid != 320732168 & date != "3/27/12" & date != "3/29/12"))
+MarchMadness13 <- subset(SuperSked13, (conf == 3 & venue == 1) & (muid != 330780096 & date != "4/2/13" & date != "4/4/13"))
+MarchMadness14 <- subset(SuperSked14, (conf == 3 & venue == 1)& (date != "4/1/14" & date != "4/3/14"))
+MarchMadness15 <- subset(SuperSked15, (conf == 3 & venue == 1) & (date != "4/2/15" & date != "3/31/15" & team1 != "South Dakota St." & team1 != "Evansville" & team1 != "Canisius" & team1 != "Kent St."))
+MarchMadness16 <- subset(SuperSked16, (conf == 3 & venue == 1) & (team1 != "Morehead St." & team1 != "Princeton" & date != "3/31/16" & date != "3/30/16" & date != "3/29/16" & date != "3/28/16"))
+MarchMadness17 <- subset(SuperSked17, (conf == 3 & venue == 1) & (date != "3/28/17" & date != "3/30/17"))
+MarchMadness18 <- subset(SuperSked18, (conf == 3 & venue == 1) & (date != "3/27/18" & date != "3/29/18"))
+MarchMadness19 <- subset(SuperSked19, (conf == 3 & venue == 1) & (date != "4/2/19" & date != "4/4/19"))
+MarchMadness21 <- subset(SuperSked21, (conf == 3 & venue == 1) & (date != "3/17/21" & team1  != "Drake" & team1 != "North Carolina St." & team1 != "SMU" & team1 != "Buffalo" & date != "3/25/21" & team1 != "Mississippi St." & team1 != "Louisiana Tech" & team1 != "Memphis" & date != "3/24/21" & date != "3/23/21" & team1 != "Bellarmine" & team1 != "Stetson" & team1 != "Longwood" & team2 != "Bryant"))
+MarchMadness22 <- subset(SuperSked22, (conf == 3 & venue == 1) & date != "3/31/22" & date != "3/29/22" & date != "3/21/22" & date != "3/22/22" & date != "3/23/22" & team1 != "Boston University" & team1 != "Florida Atlantic" & team1 != "Abilene Christian" & team1 != "UNC Wilmington" & team1 != "Ohio" & team1 != "Stephen F. Austin" & team1 != "Drake" & team1 != "Cal Baptist")
+```
+# Save These Columns for Analysis
+```{r}
+savecolumns <- function(marchmadness){
+  marchmadness <- marchmadness[, c("date", "conmatch", "matchup", "team1", "team2", "binaryresult")]
+  #marchmadness$matchup <- gsub("vs.", "at", marchmadness$matchup)
+  return(marchmadness)
+}
+MarchMadness08 <- savecolumns(MarchMadness08)
+MarchMadness09 <- savecolumns(MarchMadness09)
+MarchMadness10 <- savecolumns(MarchMadness10)
+MarchMadness11 <- savecolumns(MarchMadness11)
+MarchMadness12 <- savecolumns(MarchMadness12)
+MarchMadness13 <- savecolumns(MarchMadness13)
+MarchMadness14 <- savecolumns(MarchMadness14)
+MarchMadness15 <- savecolumns(MarchMadness15)
+MarchMadness16 <- savecolumns(MarchMadness16)
+MarchMadness17 <- savecolumns(MarchMadness17)
+MarchMadness18 <- savecolumns(MarchMadness18)
+MarchMadness19 <- savecolumns(MarchMadness19)
+MarchMadness21 <- savecolumns(MarchMadness21)
+MarchMadness22 <- savecolumns(MarchMadness22)
+```
+
+# March Madness modelData by Lee
+```{r}
+AllData <- read.csv("C:\\Users\\Jonathan Yu\\Downloads\\modelData.csv")
+```
+
+# March Madness Merging 
+```{r}
+MarchMadness09 <- merge(AllData, MarchMadness09, by.x = "matchup", by.y = "matchup")
+MarchMadness10 <- merge(AllData, MarchMadness10, by.x = "matchup", by.y = "matchup")
+MarchMadness11 <- merge(AllData, MarchMadness11, by.x = "matchup", by.y = "matchup")
+MarchMadness12 <- merge(AllData, MarchMadness12, by.x = "matchup", by.y = "matchup")
+MarchMadness13 <- merge(AllData, MarchMadness13, by.x = "matchup", by.y = "matchup")
+MarchMadness14 <- merge(AllData, MarchMadness14, by.x = "matchup", by.y = "matchup")
+MarchMadness15 <- merge(AllData, MarchMadness15, by.x = "matchup", by.y = "matchup")
+MarchMadness16 <- merge(AllData, MarchMadness16, by.x = "matchup", by.y = "matchup")
+MarchMadness17 <- merge(AllData, MarchMadness17, by.x = "matchup", by.y = "matchup")
+MarchMadness18 <- merge(AllData, MarchMadness18, by.x = "matchup", by.y = "matchup")
+MarchMadness19 <- merge(AllData, MarchMadness19, by.x = "matchup", by.y = "matchup")
+MarchMadness21 <- merge(AllData, MarchMadness21, by.x = "matchup", by.y = "matchup")
+MarchMadness22 <- merge(AllData, MarchMadness22, by.x = "matchup", by.y = "matchup")
+
+MarchMadness09
+march_training <- bind_rows(MarchMadness09, MarchMadness10, MarchMadness11,MarchMadness12,MarchMadness13,MarchMadness14,MarchMadness15,MarchMadness16,MarchMadness17,MarchMadness18,MarchMadness19,MarchMadness21)
+
+march_testing <- MarchMadness22
+march_testing
+
+
+
+```
+
+```{r}
+
+```
+
+
+
