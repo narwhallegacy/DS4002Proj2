@@ -124,7 +124,6 @@ MarchMadness22 <- subset(SuperSked22, (conf == 3 & venue == 1) & date != "3/31/2
 ```{r}
 savecolumns <- function(marchmadness){
   marchmadness <- marchmadness[, c("date", "conmatch", "matchup", "team1", "team2", "binaryresult")]
-  #marchmadness$matchup <- gsub("vs.", "at", marchmadness$matchup)
   return(marchmadness)
 }
 MarchMadness08 <- savecolumns(MarchMadness08)
@@ -165,26 +164,53 @@ MarchMadness21 <- merge(AllData, MarchMadness21, by.x = "matchup", by.y = "match
 ```
 
 ```{r}
-#MarchMadness22 <- merge(AllData, MarchMadness22, by.x = "matchup", by.y = "matchup")
-
 march_training <- bind_rows(MarchMadness09, MarchMadness10, MarchMadness11,MarchMadness12,MarchMadness13,MarchMadness14,MarchMadness15,MarchMadness16,MarchMadness17,MarchMadness18,MarchMadness19,MarchMadness21)
-
-
-
 march_training <- march_training[,51:220]
 march_training <- march_training[, -c(1, 4, 83, 86, 96, 14)]
 march_training$T1conf <- as.numeric(as.factor(march_training$T1conf))
 march_training$T2conf <- as.numeric(as.factor(march_training$T2conf))
 training_labels <- as.matrix(march_training$binaryresult)
-matrix_march_training <- as.matrix(march_training[,-c(160:164)])
-march_model <- xgboost(data = matrix_march_training, label = as.matrix(training_labels), max.depth = 2, eta = 1, nthread = 2, nrounds = 2, model = "binary:logistic")
-
-
+matrix_march_training <- as.matrix(march_training[,-c(159:164)])
 ```
 
+# XGBoost Model 
 ```{r}
+march_model <- xgboost(data = matrix_march_training, label = as.matrix(training_labels), max.depth = 2, eta = 0.3, nthread = 2, nrounds = 646, model = "binary:logistic")
 
 ```
 
+# Test on Testing Data
+```{r}
+AllData2022 <- read.csv("C:\\Users\\Jonathan Yu\\Downloads\\modelData2022.csv")
+MarchMadness22 <- merge(AllData2022, MarchMadness22, by.x = "matchup", by.y = "matchup")
+march_trainingcols <- march_training[,-c(159:164)]
+march_testing <- MarchMadness22
+march_testing <- select(march_testing, c(colnames(march_trainingcols)))
+march_testing$T1conf <- as.numeric(as.factor(march_testing$T1conf))
+march_testing$T2conf <- as.numeric(as.factor(march_testing$T2conf))
+pred <- predict(march_model, as.matrix(march_testing))
+predf <- as.data.frame(pred)
+predf$real <- MarchMadness22$binaryresult
+predf$error <- abs(predf$real - predf$pred)
+modelanalysis <- data.frame(row = 0)
+modelanalysis$mse <- mean((predf$real-predf$pred)^2)
+modelanalysis$mae <- MAE(predf$real, predf$pred)
+modelanalysis$RMSE <- caret::RMSE(predf$real, predf$pred)
+predf
+pred <- as.numeric(pred>0.5)
+pred
+confusionMatrix(factor(pred), factor(MarchMadness22$binaryresult))
+modelanalysis
+```
+# Importance Matrix
+```{r}
+march_testing
+importance_matrix <- xgb.importance(model = march_model)
+importance_matrix
+```
+# Second Model Attempt with less features...
+```{r}
+march_training <- march[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG", "T1eFG..Def", "T1FTR.Def", "T1TO", "T1TO..Def", "T13P", "T13pD.", "T1ft", "T12p.D", "T1ft", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD")]
+```
 
 
