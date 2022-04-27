@@ -173,9 +173,9 @@ training_labels <- as.matrix(march_training$binaryresult)
 matrix_march_training <- as.matrix(march_training[,-c(159:164)])
 ```
 
-# XGBoost Model 
+# XGBoost Model 1
 ```{r}
-march_model <- xgboost(data = matrix_march_training, label = as.matrix(training_labels), max.depth = 2, eta = 0.3, nthread = 2, nrounds = 646, model = "binary:logistic")
+march_model <- xgboost(data = matrix_march_training, label = as.matrix(training_labels), max.depth = 2, eta = 0.3, nthread = 2, nrounds = 500, model = "binary:logistic")
 
 ```
 
@@ -210,7 +210,28 @@ importance_matrix
 ```
 # Second Model Attempt with less features...
 ```{r}
-march_training <- march[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG", "T1eFG..Def", "T1FTR.Def", "T1TO", "T1TO..Def", "T13P", "T13pD.", "T1ft", "T12p.D", "T1ft", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD")]
+march_training2 <- march_training[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG.", "T1eFG..Def", "T1FTR", "T1FTR.Def", "T1TO.", "T1TO..Def.", "T13P.", "T13pD.", "T1ft.", "T12p.D", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD", "T2adjoe", "T2conf", "T2adjde", "T2sos", "T2ncsos", "T2consos", "T2Opp.OE", "T2Opp.DE", "T2Con.Adj.OE", "T2Con.Adj.DE","T2winRate", "T2eFG.", "T2eFG..Def", "T2FTR", "T2FTR.Def", "T2TO.", "T2TO..Def.", "T23P.", "T23pD.", "T2ft.", "T22p.D", "T2ft.D", "T23P.rate", "T23P.rate.D", "T2arate", "T2arateD")]
+
+march_model_2 <- xgboost(data = as.matrix(march_training2), label = as.matrix(training_labels), max.depth = 2, eta = 0.3, nthread = 2, nrounds = 500, model = "binary:logistic")
+
+march_testing2 <- march_testing[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG.", "T1eFG..Def", "T1FTR", "T1FTR.Def", "T1TO.", "T1TO..Def.", "T13P.", "T13pD.", "T1ft.", "T12p.D", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD", "T2adjoe", "T2conf", "T2adjde", "T2sos", "T2ncsos", "T2consos", "T2Opp.OE", "T2Opp.DE", "T2Con.Adj.OE", "T2Con.Adj.DE","T2winRate", "T2eFG.", "T2eFG..Def", "T2FTR", "T2FTR.Def", "T2TO.", "T2TO..Def.", "T23P.", "T23pD.", "T2ft.", "T22p.D", "T2ft.D", "T23P.rate", "T23P.rate.D", "T2arate", "T2arateD")]
+
+pred2 <- predict((march_model_2), as.matrix(march_testing2))
+pred2 <- as.numeric(pred2 > 0.5)
+confusionMatrix(factor(pred2), factor(MarchMadness22$binaryresult))
+
+
+```
+# Third model with even less features
+```{r}
+march_training3 <- march_training2[,c("T1adjoe", "T1adjde", "T1sos", "T1winRate", "T2adjoe", "T2adjde", "T2sos", "T2winRate")]
+
+march_model_3 <- xgboost(data = as.matrix(march_training3), label = as.matrix(training_labels), max.depth = 2, eta = 0.3, nthread = 2, nrounds = 500, model = "binary:logistic")
+march_testing3 <- march_testing2[,c("T1adjoe", "T1adjde", "T1sos", "T1winRate", "T2adjoe", "T2adjde", "T2sos", "T2winRate")]
+pred3 <- predict(march_model_3, as.matrix(march_testing3))
+pred3 <- as.numeric(pred3 > 0.5)
+confusionMatrix(factor(pred3), factor(MarchMadness22$binaryresult))
+
 ```
 
 
