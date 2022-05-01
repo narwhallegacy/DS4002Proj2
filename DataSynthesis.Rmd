@@ -188,32 +188,34 @@ names(teamStatsAll)
 
 
 ```{r Combine Game Data}
-games.09 = read.csv("Team Game stats/2009_super_sked.csv", header = TRUE)
-games.10 = read.csv("Team Game stats/2010_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.08 = read.csv("Team Game stats/2008_super_sked.csv", header = TRUE)
+games.09 = read.csv("Team Game stats/2009_super_sked.csv", header = FALSE)
+names(games.09) = names(games.08)
+games.10 = read.csv("Team Game stats/2010_super_sked.csv", header = FALSE)
 names(games.10) = names(games.09)
-games.11 = read.csv("Team Game stats/2011_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.11 = read.csv("Team Game stats/2011_super_sked.csv", header = FALSE)
 names(games.11) = names(games.09)
-games.12 = read.csv("Team Game stats/2012_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.12 = read.csv("Team Game stats/2012_super_sked.csv", header = FALSE)
 names(games.12) = names(games.09)
-games.13 = read.csv("Team Game stats/2013_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.13 = read.csv("Team Game stats/2013_super_sked.csv", header = FALSE)
 names(games.13) = names(games.09)
-games.14 = read.csv("Team Game stats/2014_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.14 = read.csv("Team Game stats/2014_super_sked.csv", header = FALSE)
 names(games.14) = names(games.09)
-games.15 = read.csv("Team Game stats/2015_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.15 = read.csv("Team Game stats/2015_super_sked.csv", header = FALSE)
 names(games.15) = names(games.09)
-games.16 = read.csv("Team Game stats/2016_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.16 = read.csv("Team Game stats/2016_super_sked.csv", header = FALSE)
 names(games.16) = names(games.09)
-games.17 = read.csv("Team Game stats/2017_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.17 = read.csv("Team Game stats/2017_super_sked.csv", header = FALSE)
 names(games.17) = names(games.09)
-games.18 = read.csv("Team Game stats/2018_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.18 = read.csv("Team Game stats/2018_super_sked.csv", header = FALSE)
 names(games.18) = names(games.09)
-games.19 = read.csv("Team Game stats/2019_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.19 = read.csv("Team Game stats/2019_super_sked.csv", header = FALSE)
 names(games.19) = names(games.09)
-games.20 = read.csv("Team Game stats/2020_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.20 = read.csv("Team Game stats/2020_super_sked.csv", header = FALSE)
 names(games.20) = names(games.09)
-games.21 = read.csv("Team Game stats/2021_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.21 = read.csv("Team Game stats/2021_super_sked.csv", header = FALSE)
 names(games.21) = names(games.09)
-games.22 = read.csv("Team Game stats/2022_super_sked.csv", header = FALSE)[,-c(21:22,51:55)]
+games.22 = read.csv("Team Game stats/2022_super_sked.csv", header = FALSE)
 names(games.22) = names(games.09)
 
 addYearGames = function(gameData) {

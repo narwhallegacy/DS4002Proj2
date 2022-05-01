@@ -53,7 +53,9 @@ teamAll = merge(teamResultsAll, teamStatsAll, by.x = "team", by.y = "TeamName")
 ```{r EDA}
 #Team winrate and field goal rates
 
-ggplot(data = teamAll, aes(x = eFG..Def, y = eFG., color = winRate)) + geom_point() + xlab("Effective Field Goals (Defence)") + ylab("Effective Field Goals (Offense)") + ggtitle("Offensive and Defensive Field Goal Rates and Team WinRate")
+teamAll$eFG
+
+ggplot(data = teamAll, aes(x = `eFG% Def`, y = `eFG%`, color = winRate)) + geom_point() + xlab("Effective Field Goals (Defence)") + ylab("Effective Field Goals (Offense)") + ggtitle("Offensive and Defensive Field Goal Rates and Team WinRate")
 
 ggplot(data = teamAll, aes(x = FTR, y = winRate)) + geom_point() + xlab("Free-Throw Rate") + ylab("Season Winrate") + ggtitle("Free Throw Rate vs Winrate")
 
