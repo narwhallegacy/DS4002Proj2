@@ -115,6 +115,14 @@ tourneyteams = unique(c(modelData.ncaa$team1, modelData.ncaa$team2))
 bigGames = which(modelData.conf$team1 %in% tourneyteams & modelData.conf$team2 %in% tourneyteams)
 
 modelData.conf.red = dplyr::slice(modelData.conf, bigGames)
+
+#save(modelData, file = "modelData.RData")
+#save(modelData.ncaa, file = "modelData_ncaa.RData")
+#save(modelData.conf, file = "modelData_conf.red.RData")
+
+write.csv(modelData,"modelData2.csv")
+write.csv(modelData.ncaa,"modelData_ncaa.csv")
+write.csv(modelData.conf.red,"modelData_conf.csv")
 ```
 
 

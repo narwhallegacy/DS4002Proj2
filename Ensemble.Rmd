@@ -1,0 +1,156 @@
+---
+title: "Ensemble"
+author: "glc5pn"
+date: "5/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tm)
+library(topicmodels)
+library(SnowballC)
+library(ggwordcloud)
+library(RColorBrewer)
+library(syuzhet)
+library(lexicon)
+library(tidytext)
+library(textdata)
+library(xgboost)
+library(parallel)
+library(caret)
+library(stringr)
+library(MASS)
+library(dplyr)
+library(xgboost)
+library(DiagrammeR)
+```
+
+
+```{r read data}
+setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
+
+modelData = read.csv("modelData2.csv")
+modelData.ncaa = read.csv("modelData_ncaa.csv")
+modelData.conf = read.csv("modelData_conf.csv")
+load("diff_xg_model.RData")
+load("diff_lm_model.RData")
+
+load("march_model_1.RData")
+load("march_model_2.RData")
+load("march_model_3.RData")
+```
+
+```{r data manipulation}
+modelData.ncaa = modelData.ncaa[modelData.ncaa$result != "",]
+
+
+modelData.conf2 = data.frame("T1eFG..Def" = modelData.conf$T1eFG..Def,
+                                 "T1eFG." = modelData.conf$T1eFG., "T2eFG..Def" = modelData.conf$T2eFG..Def,
+                                 "T2eFG." = modelData.conf$T2eFG., "T1FTR" = modelData.conf$T1FTR,
+                                 "T2FTR" = modelData.conf$T2FTR, "T1TO." = modelData.conf$T1TO.,
+                                 "T1TO..Def." = modelData.conf$T1TO..Def., "T2TO." = modelData.conf$T2TO.,
+                                 "T2TO..Def." = modelData.conf$T2TO..Def., "T12p." = modelData.conf$T12p.,
+                                 "T13P." = modelData.conf$T13P., "T22p." = modelData.conf$T22p.,
+                                 "T23P." = modelData.conf$T23P.)
+
+modelData.ncaa2 = data.frame("T1eFG..Def" = modelData.ncaa$T1eFG..Def,
+                                 "T1eFG." = modelData.ncaa$T1eFG., "T2eFG..Def" = modelData.ncaa$T2eFG..Def,
+                                 "T2eFG." = modelData.ncaa$T2eFG., "T1FTR" = modelData.ncaa$T1FTR,
+                                 "T2FTR" = modelData.ncaa$T2FTR, "T1TO." = modelData.ncaa$T1TO.,
+                                 "T1TO..Def." = modelData.ncaa$T1TO..Def., "T2TO." = modelData.ncaa$T2TO.,
+                                 "T2TO..Def." = modelData.ncaa$T2TO..Def., "T12p." = modelData.ncaa$T12p.,
+                                 "T13P." = modelData.ncaa$T13P., "T22p." = modelData.ncaa$T22p.,
+                                 "T23P." = modelData.ncaa$T23P.)
+
+mm_training2 <- modelData.conf[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG.", "T1eFG..Def", "T1FTR", "T1FTR.Def", "T1TO.", "T1TO..Def.", "T13P.", "T13pD.", "T1ft.", "T12p.D", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD", "T2adjoe", "T2conf", "T2adjde", "T2sos", "T2ncsos", "T2consos", "T2Opp.OE", "T2Opp.DE", "T2Con.Adj.OE", "T2Con.Adj.DE","T2winRate", "T2eFG.", "T2eFG..Def", "T2FTR", "T2FTR.Def", "T2TO.", "T2TO..Def.", "T23P.", "T23pD.", "T2ft.", "T22p.D", "T2ft.D", "T23P.rate", "T23P.rate.D", "T2arate", "T2arateD")]
+
+mm_testing2 <- modelData.ncaa[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG.", "T1eFG..Def", "T1FTR", "T1FTR.Def", "T1TO.", "T1TO..Def.", "T13P.", "T13pD.", "T1ft.", "T12p.D", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD", "T2adjoe", "T2conf", "T2adjde", "T2sos", "T2ncsos", "T2consos", "T2Opp.OE", "T2Opp.DE", "T2Con.Adj.OE", "T2Con.Adj.DE","T2winRate", "T2eFG.", "T2eFG..Def", "T2FTR", "T2FTR.Def", "T2TO.", "T2TO..Def.", "T23P.", "T23pD.", "T2ft.", "T22p.D", "T2ft.D", "T23P.rate", "T23P.rate.D", "T2arate", "T2arateD")]
+
+mm_training2$T1conf = as.numeric(as.factor(modelData.conf$T1conf))
+mm_training2$T2conf = as.numeric(as.factor(modelData.conf$T2conf))
+
+mm_testing2$T1conf = as.numeric(as.factor(modelData.ncaa$T1conf))
+mm_testing2$T2conf = as.numeric(as.factor(modelData.ncaa$T2conf))
+
+
+
+mm_training3 <- modelData.conf[,c("T1adjoe", "T1adjde", "T1sos", "T1winRate", "T2adjoe", "T2adjde", "T2sos", "T2winRate")]
+mm_testing3 <- modelData.ncaa[,c("T1adjoe", "T1adjde", "T1sos", "T1winRate", "T2adjoe", "T2adjde", "T2sos", "T2winRate")]
+
+
+
+
+trainLabs = (str_replace(modelData.conf$winner,",",".") == modelData.conf$team1)
+testLabs = (str_replace(modelData.ncaa$winner,",",".") == modelData.ncaa$team1)
+
+
+
+1-mean(testLabs)
+```
+
+```{r produce output}
+diff.xg.train = as.numeric(predict(xg.model,as.matrix(modelData.conf2)))
+diff.lm.train = predict(l.model.int.step,modelData.conf)
+mm2.train = predict(march_model_2,as.matrix(mm_training2))
+mm3.train = predict(march_model_3,as.matrix(mm_training3))
+
+diff.xg.test = as.numeric(predict(xg.model,as.matrix(modelData.ncaa2)))
+diff.lm.test = predict(l.model.int.step,modelData.ncaa)
+mm2.test = predict(march_model_2,as.matrix(mm_testing2))
+mm3.test = predict(march_model_3,as.matrix(mm_testing3))
+
+
+
+trainData = data.frame("diff.xg" = diff.xg.train, "diff.lm" = diff.lm.train,
+                       "mm2" = mm2.train, "mm3" = mm3.train)
+testData = data.frame("diff.xg" = diff.xg.test, "diff.lm" = diff.lm.test,
+                       "mm2" = mm2.test, "mm3" = mm3.test)
+
+#trainData = data.frame("diff.xg" = diff.xg.train, "diff.lm" = diff.lm.train, "mm3" = mm3.train)
+#testData = data.frame("diff.xg" = diff.xg.test, "diff.lm" = diff.lm.test, "mm3" = mm3.test)
+```
+
+
+```{r ensemble model}
+n = nrow(trainData)
+n.folds = 10
+#i = 1
+set.seed(4600)
+fold = sample(rep(1:n.folds,length = n))
+nround.vec = c(1,2,3,4,seq(5,75,by = 5))
+
+nround.matrix = matrix(nrow = length(nround.vec), ncol = 2)
+nround.matrix = as.data.frame(nround.matrix)
+names(nround.matrix) = c("nround","accuracy")
+
+for (i in 1:length(nround.vec)) {
+  accuracy.vec = c()
+  for (j in 1:n.folds) {
+    val = which(fold == j)
+    train = which(fold != j)
+    data.t = dplyr::slice(trainData,train)
+    data.v = dplyr::slice(trainData,val)
+    labs.t = trainLabs[train]
+    labs.v = trainLabs[val]
+    
+    ensemble.xg = xgboost(data = as.matrix(data.t), label = labs.t,nrounds = nround.vec[i], params = list(objective = "binary:logistic"))
+
+    accuracy.i = mean(round(predict(ensemble.xg,as.matrix(data.v))) == labs.v)
+    accuracy.vec = c(accuracy.vec,accuracy.i)
+  }
+  nround.matrix[i,] = c(nround.vec[i],mean(accuracy.vec))
+}
+
+
+
+
+ensemble.xg = xgboost(data = as.matrix(trainData), label = trainLabs,nrounds = 3, params = list(objective = "binary:logistic"))
+
+en.preds = as.logical(round(predict(ensemble.xg,as.matrix(testData))))
+mean(en.preds == testLabs)
+```
+
+
