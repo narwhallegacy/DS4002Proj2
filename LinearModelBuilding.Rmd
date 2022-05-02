@@ -1,0 +1,440 @@
+---
+title: "LinearModelBuilding"
+author: "glc5pn"
+date: "4/12/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tm)
+library(topicmodels)
+library(SnowballC)
+library(ggwordcloud)
+library(RColorBrewer)
+library(syuzhet)
+library(lexicon)
+library(tidytext)
+library(textdata)
+library(xgboost)
+library(parallel)
+library(caret)
+library(stringr)
+library(MASS)
+library(dplyr)
+library(xgboost)
+library(DiagrammeR)
+```
+
+```{r read-in, echo = FALSE}
+setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
+#setwd("jonathan's File Path")
+
+teamStatsAll = read.csv("teamStatsData.csv")[,-c(1)]
+teamResultsAll = read.csv("teamResultsData.csv")[,-c(1)]
+gameData = read.csv("gamesData.csv")[,-c(1)]
+names(teamStatsAll) = c("TeamName","eFG%","Rk","eFG% Def","Rk.1","FTR","Rk.2",
+                        "FTR Def","Rk.3","OR%","Rk.4","DR%","Rk.5","TO%","Rk.6",
+                        "TO% Def.","Rk.7","3P%","rk","3pD%","rk.1","2p%",
+                        "rk.2","2p%D","rk.3","ft%","rk.4","ft%D","rk.5","3P rate",
+                        "rk.6","3P rate D","rk.7","arate","rk.8","arateD","rk.9",
+                        "Winrate")
+
+teamAll = merge(teamResultsAll, teamStatsAll, by.x = "team", by.y = "TeamName")
+```
+
+
+```{r add stats, eval = FALSE}
+#This chunk takes a few hours to run and its output is read in from a .csv at the next block to avoid wasting time
+
+
+
+modelData = matrix(nrow = nrow(gameData), ncol = (ncol(gameData) + 2*ncol(teamAll)))
+modelData = as.data.frame(modelData)
+names(modelData)[1:ncol(gameData)] = names(gameData)
+
+team1.names = paste("T1",names(teamAll),sep="")
+team2.names = paste("T2",names(teamAll),sep="")
+names(modelData) = c(names(gameData),team1.names,team2.names)
+
+
+modelData[,1:ncol(gameData)] = gameData
+
+for (i in 1:nrow(gameData)) {
+  team1 = gameData$team1[i]
+  team2 = gameData$team2[i]
+  
+  index.1 = match(team1, teamAll$team)
+  index.2 = match(team2, teamAll$team)
+  
+  modelData[i,(ncol(gameData)+1):ncol(modelData)] = c(teamAll[index.1,],teamAll[index.2,])
+}
+
+
+#write.csv(modelData, "modelData.csv")
+#write.csv(modelData, "modelData2022.csv")
+
+
+#troubleshoot = rbind(modelData, modelData22)
+```
+
+```{r feature engineering cont}
+modelData = read.csv("modelData.csv", header = TRUE)
+
+getScoreDiff = function(diff, team1,team2,winner) {
+  diffs = c()
+  scorestr = strsplit(diff,", ")
+  for (i in 1:length(scorestr)){
+    score.i = scorestr[[i]][2]
+    scores.i = strsplit(score.i,"-")
+    diff = as.numeric(scores.i[[1]][1]) - as.numeric(scores.i[[1]][2])
+    if (str_replace(winner[i],",",".") != team1[i]) {
+      diff = diff * -1
+    }
+    diffs = c(diffs, diff)
+  }
+  return(diffs)
+}
+
+scorediffs = getScoreDiff(modelData$result, modelData$team1, modelData$team2, modelData$winner)
+modelData = modelData %>% mutate("scoreDiff" = scorediffs)
+
+
+
+
+ncaagames = which(modelData$conf == 3 & modelData$venue == 1)
+confgames = which(modelData$conf != 3 & modelData$venue == 1)
+modelData.ncaa = dplyr::slice(modelData,ncaagames)
+modelData.conf = dplyr::slice(modelData,confgames)
+
+
+tourneyteams = unique(c(modelData.ncaa$team1, modelData.ncaa$team2))
+
+bigGames = which(modelData.conf$team1 %in% tourneyteams & modelData.conf$team2 %in% tourneyteams)
+
+modelData.conf.red = dplyr::slice(modelData.conf, bigGames)
+
+#save(modelData, file = "modelData.RData")
+#save(modelData.ncaa, file = "modelData_ncaa.RData")
+#save(modelData.conf, file = "modelData_conf.red.RData")
+
+write.csv(modelData,"modelData2.csv")
+write.csv(modelData.ncaa,"modelData_ncaa.csv")
+write.csv(modelData.conf.red,"modelData_conf.csv")
+```
+
+
+```{r build 10-fold CV lm}
+#modelData = read.csv("modelData.csv", header = TRUE)
+
+n = nrow(modelData)
+n.folds = 10
+#i = 1
+set.seed(4600)
+fold = sample(rep(1:n.folds,length = n))
+
+probs = matrix(ncol = n.folds, nrow = ceiling(n/n.folds))
+probs = as.data.frame(probs)
+
+tclass = as.data.frame(probs)
+
+#Run 10-fold CV on logistic regression and store prediction probs in probs dataframe
+for (i in 1:n.folds) {
+  val = which(fold == i)
+  train = which(fold != i)
+  n.val = length(val)
+  haiti.t = dplyr::slice(modelData,train)
+  haiti.v = dplyr::slice(modelData,val)
+  
+  l.model = lm(`scoreDiff` ~ T1eFG..Def + T1eFG. + T2eFG..Def + T2eFG. + T1FTR + 
+                 T2FTR + `T1TO.` + `T1TO..Def.` + `T2TO.` + `T2TO..Def.` +
+                 `T12p.` + `T13P.` + `T22p.` + `T23P.`, data = haiti.t)
+  
+  est.diffs = as.numeric(predict(l.model,haiti.v))
+  
+  real = haiti.v$scoreDiff
+  if (length(est.diffs) == floor(n/n.folds)) {
+    est.diffs = c(est.diffs, NA)
+    real = c(real, NA)
+  }
+  probs[,i] = est.diffs
+  tclass[,i] = real
+}
+
+
+mse.matrix = matrix(ncol=10, nrow = nrow(probs))
+mse.matrix = as.data.frame(mse.matrix)
+for (i in 1:10) {
+  mse.matrix[,i] = abs((probs[,i] - tclass[,i]))^2
+}
+
+mse.vector = colSums(mse.matrix, na.rm = TRUE) / nrow(probs)
+
+paste("10-fold CV MSE of first level model | ", mean(mse.vector))
+```
+
+
+```{r Reduced Teams Model}
+
+n = nrow(modelData.conf.red)
+n.folds = 10
+#i = 1
+set.seed(4600)
+fold = sample(rep(1:n.folds,length = n))
+
+
+probs = matrix(ncol = n.folds, nrow = ceiling(n/n.folds))
+probs = as.data.frame(probs)
+
+tclass = as.data.frame(probs)
+
+#Run 10-fold CV on logistic regression and store prediction probs in probs dataframe
+for (i in 1:n.folds) {
+  val = which(fold == i)
+  train = which(fold != i)
+  n.val = length(val)
+  haiti.t = dplyr::slice(modelData.conf.red,train)
+  haiti.v = dplyr::slice(modelData.conf.red,val)
+  
+  l.model = lm(`scoreDiff` ~ T1eFG..Def + T1eFG. + T2eFG..Def + T2eFG. + T1FTR + 
+                 T2FTR + `T1TO.` + `T1TO..Def.` + `T2TO.` + `T2TO..Def.` +
+                 `T12p.` + `T13P.` + `T22p.` + `T23P.`, data = haiti.t)
+  
+  est.diffs = as.numeric(predict(l.model,haiti.v))
+  
+  real = haiti.v$scoreDiff
+  if (length(est.diffs) < ceiling(n/n.folds)) {
+    est.diffs = c(est.diffs, NA)
+    real = c(real, NA)
+  }
+  probs[,i] = est.diffs
+  tclass[,i] = real
+}
+
+
+mse.matrix = matrix(ncol=10, nrow = nrow(probs))
+mse.matrix = as.data.frame(mse.matrix)
+for (i in 1:10) {
+  mse.matrix[,i] = abs((probs[,i] - tclass[,i]))^2
+}
+
+mse.vector = colSums(mse.matrix, na.rm = TRUE) / nrow(probs)
+
+paste("10-fold CV MSE of first level model | ", mean(mse.vector))
+```
+
+
+```{r Reduced Teams Model}
+
+n = nrow(modelData.conf.red)
+n.folds = 10
+#i = 1
+set.seed(4600)
+fold = sample(rep(1:n.folds,length = n))
+
+
+probs = matrix(ncol = n.folds, nrow = ceiling(n/n.folds))
+probs = as.data.frame(probs)
+
+tclass = as.data.frame(probs)
+
+#Run 10-fold CV on logistic regression and store prediction probs in probs dataframe
+for (i in 1:n.folds) {
+  val = which(fold == i)
+  train = which(fold != i)
+  n.val = length(val)
+  haiti.t = dplyr::slice(modelData.conf.red,train)
+  haiti.v = dplyr::slice(modelData.conf.red,val)
+  
+  l.model.int = lm(`scoreDiff` ~ T1eFG..Def + T1eFG. + T2eFG..Def + T2eFG. + T1eFG..Def*T2eFG. + + T2eFG..Def*T1eFG.  +  T1FTR + 
+                 T2FTR + `T1TO.` + `T1TO..Def.` + `T2TO.` + `T2TO..Def.` + `T1TO.`*`T2TO..Def.` + `T2TO.`*`T1TO..Def.` + 
+                 `T12p.` + `T13P.` + `T22p.` + `T23P.`, data = haiti.t)
+  
+  est.diffs = as.numeric(predict(l.model.int,haiti.v))
+  
+  real = haiti.v$scoreDiff
+  if (length(est.diffs) < ceiling(n/n.folds)) {
+    est.diffs = c(est.diffs, NA)
+    real = c(real, NA)
+  }
+  probs[,i] = est.diffs
+  tclass[,i] = real
+}
+
+
+mse.matrix = matrix(ncol=10, nrow = nrow(probs))
+mse.matrix = as.data.frame(mse.matrix)
+for (i in 1:10) {
+  mse.matrix[,i] = abs((probs[,i] - tclass[,i]))^2
+}
+
+mse.vector = colSums(mse.matrix, na.rm = TRUE) / nrow(probs)
+
+paste("10-fold CV MSE of first level interaction model | ", mean(mse.vector))
+```
+
+```{r reduced model}
+n = nrow(modelData.conf.red)
+n.folds = 10
+#i = 1
+set.seed(4600)
+fold = sample(rep(1:n.folds,length = n))
+
+
+probs = matrix(ncol = n.folds, nrow = ceiling(n/n.folds))
+probs = as.data.frame(probs)
+
+tclass = as.data.frame(probs)
+
+#Run 10-fold CV on logistic regression and store prediction probs in probs dataframe
+for (i in 1:n.folds) {
+  val = which(fold == i)
+  train = which(fold != i)
+  n.val = length(val)
+  haiti.t = dplyr::slice(modelData.conf.red,train)
+  haiti.v = dplyr::slice(modelData.conf.red,val)
+  
+  l.model.int = lm(`scoreDiff` ~ T1eFG..Def + T1eFG. + T2eFG..Def + T2eFG. + T1eFG..Def*T2eFG. + + T2eFG..Def*T1eFG.  +  T1FTR + 
+                 T2FTR + `T1TO.` + `T1TO..Def.` + `T2TO.` + `T2TO..Def.` + `T1TO.`*`T2TO..Def.` + `T2TO.`*`T1TO..Def.` + 
+                 `T12p.` + `T13P.` + `T22p.` + `T23P.`, data = haiti.t)
+  
+  l.model.int.step = stepAIC(l.model.int, dorection = "both", trace = FALSE)
+  
+  est.diffs = as.numeric(predict(l.model.int.step,haiti.v))
+  
+  real = haiti.v$scoreDiff
+  if (length(est.diffs) < ceiling(n/n.folds)) {
+    est.diffs = c(est.diffs, NA)
+    real = c(real, NA)
+  }
+  probs[,i] = est.diffs
+  tclass[,i] = real
+}
+
+
+mse.matrix = matrix(ncol=10, nrow = nrow(probs))
+mse.matrix = as.data.frame(mse.matrix)
+for (i in 1:10) {
+  mse.matrix[,i] = abs((probs[,i] - tclass[,i]))^2
+}
+
+mse.vector = colSums(mse.matrix, na.rm = TRUE) / nrow(probs)
+
+paste("10-fold CV MSE of first level interaction model | ", mean(mse.vector))
+
+
+l.model.int = lm(`scoreDiff` ~ T1eFG..Def + T1eFG. + T2eFG..Def + T2eFG. + T1eFG..Def*T2eFG. + + T2eFG..Def*T1eFG.  +  T1FTR + 
+                 T2FTR + `T1TO.` + `T1TO..Def.` + `T2TO.` + `T2TO..Def.` + `T1TO.`*`T2TO..Def.` + `T2TO.`*`T1TO..Def.` + 
+                 `T12p.` + `T13P.` + `T22p.` + `T23P.`, data = modelData.conf.red)
+  
+l.model.int.step = stepAIC(l.model.int, dorection = "both", trace = FALSE)
+  
+summary(l.model.int.step)
+
+est.diffs = as.numeric(predict(l.model.int.step,modelData.ncaa))
+
+mse = abs((est.diffs - modelData.ncaa$scoreDiff)^2)
+se = abs((est.diffs - modelData.ncaa$scoreDiff))
+
+```
+
+```{r xgboost model}
+n = nrow(modelData.conf.red)
+n.folds = 10
+#i = 1
+set.seed(4600)
+fold = sample(rep(1:n.folds,length = n))
+
+
+probs = matrix(ncol = n.folds, nrow = ceiling(n/n.folds))
+probs = as.data.frame(probs)
+
+tclass = as.data.frame(probs)
+
+modelData.conf.red2 = data.frame("T1eFG..Def" = modelData.conf.red$T1eFG..Def,
+                                 "T1eFG." = modelData.conf.red$T1eFG., "T2eFG..Def" = modelData.conf.red$T2eFG..Def,
+                                 "T2eFG." = modelData.conf.red$T2eFG., "T1FTR" = modelData.conf.red$T1FTR,
+                                 "T2FTR" = modelData.conf.red$T2FTR, "T1TO." = modelData.conf.red$T1TO.,
+                                 "T1TO..Def." = modelData.conf.red$T1TO..Def., "T2TO." = modelData.conf.red$T2TO.,
+                                 "T2TO..Def." = modelData.conf.red$T2TO..Def., "T12p." = modelData.conf.red$T12p.,
+                                 "T13P." = modelData.conf.red$T13P., "T22p." = modelData.conf.red$T22p.,
+                                 "T23P." = modelData.conf.red$T23P.)
+
+modelData.ncaa2 = data.frame("T1eFG..Def" = modelData.ncaa$T1eFG..Def,
+                                 "T1eFG." = modelData.ncaa$T1eFG., "T2eFG..Def" = modelData.ncaa$T2eFG..Def,
+                                 "T2eFG." = modelData.ncaa$T2eFG., "T1FTR" = modelData.ncaa$T1FTR,
+                                 "T2FTR" = modelData.ncaa$T2FTR, "T1TO." = modelData.ncaa$T1TO.,
+                                 "T1TO..Def." = modelData.ncaa$T1TO..Def., "T2TO." = modelData.ncaa$T2TO.,
+                                 "T2TO..Def." = modelData.ncaa$T2TO..Def., "T12p." = modelData.ncaa$T12p.,
+                                 "T13P." = modelData.ncaa$T13P., "T22p." = modelData.ncaa$T22p.,
+                                 "T23P." = modelData.ncaa$T23P.)
+
+nrounds_vec = seq(1,10,1)
+
+mse.matrix = matrix(nrow = length(nrounds_vec), ncol = 2)
+mse.matrix = as.data.frame(mse.matrix)
+names(mse.matrix) = c("nrounds","MSE")
+
+
+
+for (j in 1:length(nrounds_vec)) {
+  #Run 10-fold CV on logistic regression and store prediction probs in probs dataframe
+  for (i in 1:n.folds) {
+    val = which(fold == i)
+    train = which(fold != i)
+    n.val = length(val)
+    haiti.t = dplyr::slice(modelData.conf.red2,train)
+    haiti.v = dplyr::slice(modelData.conf.red2,val)
+    trainlabs = modelData.conf.red$scoreDiff[train]
+    vallabs = modelData.conf.red$scoreDiff[val]
+  
+    #l.model.int = lm(`scoreDiff` ~ T1eFG..Def + T1eFG. + T2eFG..Def + T2eFG. + T1eFG..Def*T2eFG. + + T2eFG..Def*T1eFG.  +  T1FTR + 
+    #               T2FTR + `T1TO.` + `T1TO..Def.` + `T2TO.` + `T2TO..Def.` + `T1TO.`*`T2TO..Def.` + `T2TO.`*`T1TO..Def.` + 
+    #               `T12p.` + `T13P.` + `T22p.` + `T23P.`, data = haiti.t)
+  
+    xg.model = xgboost(data = as.matrix(haiti.t), label = trainlabs, nrounds = nrounds_vec[j])
+  
+    est.diffs = as.numeric(predict(xg.model,as.matrix(haiti.v)))
+  
+    real = vallabs
+    if (length(est.diffs) < ceiling(n/n.folds)) {
+      est.diffs = c(est.diffs, NA)
+      real = c(real, NA)
+    }
+    probs[,i] = est.diffs
+    tclass[,i] = real
+  }
+  mse.i = matrix(ncol=10, nrow = nrow(probs))
+  mse.i = as.data.frame(mse.i)
+  for (i in 1:10) {
+    mse.i[,i] = abs((probs[,i] - tclass[,i]))^2
+  }
+
+  mse.vector = colSums(mse.i, na.rm = TRUE) / nrow(probs)
+  
+}
+
+
+
+
+
+paste("10-fold CV MSE of first level interaction model | ", mean(mse.vector))
+
+
+xgb.plot.tree(model = xg.model, trees = 1)
+
+
+xg.model = xgboost(data = as.matrix(modelData.conf.red2), label = modelData.conf.red$scoreDiff, nrounds = 4)
+  
+est.diffs = as.numeric(predict(xg.model,as.matrix(modelData.ncaa2)))
+
+mse = abs((est.diffs - modelData.ncaa$scoreDiff)^2)
+se = abs((est.diffs - modelData.ncaa$scoreDiff))
+
+save(l.model.int.step, file = "diff_lm_model.RData")
+save(xg.model, file = "diff_xg_model.RData")
+
+
+```

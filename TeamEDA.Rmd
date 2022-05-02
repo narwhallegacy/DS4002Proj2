@@ -26,28 +26,42 @@ library(MASS)
 ```
 
 
-```{r read-in, include = FALSE}
+```{r read-in, echo = FALSE}
 setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
 #setwd("jonathan's File Path")
 
 teamStatsAll = read.csv("teamStatsData.csv")[,-c(1)]
 teamResultsAll = read.csv("teamResultsData.csv")[,-c(1)]
 gameData = read.csv("gamesData.csv")[,-c(1)]
-
+names(teamStatsAll) = c("TeamName","eFG%","Rk","eFG% Def","Rk.1","FTR","Rk.2",
+                        "FTR Def","Rk.3","OR%","Rk.4","DR%","Rk.5","TO%","Rk.6",
+                        "TO% Def.","Rk.7","3P%","rk","3pD%","rk.1","2p%",
+                        "rk.2","2p%D","rk.3","ft%","rk.4","ft%D","rk.5","3P rate",
+                        "rk.6","3P rate D","rk.7","arate","rk.8","arateD","rk.9",
+                        "Winrate")
 
 teamAll = merge(teamResultsAll, teamStatsAll, by.x = "team", by.y = "TeamName")
 ```
-
 
 ```{r Get Tempo for all teams}
 #TODO this
 ```
 
 
+
+
 ```{r EDA}
 #Team winrate and field goal rates
 
-ggplot(data = teamAll, aes(x = eFG..Def, y = eFG., color = winRate)) + geom_point() + xlab("Effective Field Goals (Defence)") + ylab("Effective Field Goals (Offense)") + ggtitle("Offensive and Defensive Field Goal Rates and Team WinRate")
+teamAll$eFG
 
+ggplot(data = teamAll, aes(x = `eFG% Def`, y = `eFG%`, color = winRate)) + geom_point() + xlab("Effective Field Goals (Defence)") + ylab("Effective Field Goals (Offense)") + ggtitle("Offensive and Defensive Field Goal Rates and Team WinRate")
+
+ggplot(data = teamAll, aes(x = FTR, y = winRate)) + geom_point() + xlab("Free-Throw Rate") + ylab("Season Winrate") + ggtitle("Free Throw Rate vs Winrate")
+
+ggplot(data = teamStatsAll, aes(x = `TO%`, y=`TO% Def.`, color=Winrate)) + geom_point() + xlab("Turnovers per 100 plays") + ylab("Turnovers per 100 plays (Defence)") + ggtitle("Winrate vs Turnover Rate")
+
+ggplot(data = teamStatsAll, aes(x = `2p%`, y = `3P%`, color=Winrate)) + geom_point() + xlab("2-Point Accuracy") + ylab("3-Point Accuracy") + ggtitle("Field Goal Accuracy vs Winrate")
 ```
+
 
