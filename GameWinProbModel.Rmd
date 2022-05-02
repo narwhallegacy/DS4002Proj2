@@ -200,6 +200,7 @@ pred <- as.numeric(pred>0.5)
 pred
 confusionMatrix(factor(pred), factor(MarchMadness22$binaryresult))
 modelanalysis
+save(march_model, file = "march_model_1.RData")
 ```
 # Importance Matrix
 ```{r}
@@ -220,7 +221,7 @@ pred2 <- as.numeric(pred2 > 0.5)
 confusionMatrix(factor(pred2), factor(MarchMadness22$binaryresult))
 importance_matrix2 <- xgb.importance(model = march_model_2)
 xgb.plot.importance(importance_matrix2, top_n = 5)
-
+save(march_model_2, file = "march_model_2.RData")
 ```
 # Third model with even less features
 ```{r}
@@ -233,7 +234,7 @@ pred3 <- as.numeric(pred3 > 0.5)
 confusionMatrix(factor(pred3), factor(MarchMadness22$binaryresult))
 importance_matrix3 <- xgb.importance(model = march_model_3)
 xgb.plot.importance(importance_matrix3, top_n = 8)
-
+save(march_model_3, file = "march_model_3.RData")
 ```
 
 
