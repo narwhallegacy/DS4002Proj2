@@ -30,17 +30,16 @@ library(DiagrammeR)
 
 
 ```{r read data}
-setwd("~/School/4th Year/DS4002/Github/DS4002_Proj2")
+setwd("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2")
+modelData = read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\modelData2022.csv")
+modelData.ncaa = read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\modelData_ncaa.csv")
+modelData.conf = read.csv("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\modelData_conf.csv")
+load("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\diff_xg_model.RData")
+load("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\diff_lm_model.RData")
 
-modelData = read.csv("modelData2.csv")
-modelData.ncaa = read.csv("modelData_ncaa.csv")
-modelData.conf = read.csv("modelData_conf.csv")
-load("diff_xg_model.RData")
-load("diff_lm_model.RData")
-
-load("march_model_1.RData")
-load("march_model_2.RData")
-load("march_model_3.RData")
+load("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\march_model_1.RData")
+load("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\march_model_2.RData")
+load("C:\\Users\\Jonathan Yu\\Documents\\GitHub\\DS4002Proj2\\march_model_3.RData")
 ```
 
 ```{r data manipulation}
@@ -151,6 +150,311 @@ ensemble.xg = xgboost(data = as.matrix(trainData), label = trainLabs,nrounds = 3
 
 en.preds = as.logical(round(predict(ensemble.xg,as.matrix(testData))))
 mean(en.preds == testLabs)
+
+```
+
+```{r}
+ensemble.xg
+```
+```{r}
+modelData.ncaa2022 <- march_testing[,c("T1eFG..Def", "T1eFG.", "T2eFG..Def", "T2eFG.", "T1FTR", "T2FTR", "T1TO.", "T1TO..Def.", "T2TO.", "T2TO..Def.", "T12p.", "T13P.", "T22p.", "T23P.")]
+diff.xg.test <- as.numeric(predict(xg.model, as.matrix(modelData.ncaa2022)))
+diff.lm.test <- predict(l.model.int.step, march_testing)
+mm2.test <- predict(march_model_2, as.matrix(march_testing2))
+march_testing2
+mm3.test <- predict(march_model_3, as.matrix(march_testing3))
+march_testing3
+testData = data.frame("diff.xg" = diff.xg.test, "diff.lm" = diff.lm.test,
+                       "mm2" = mm2.test, "mm3" = mm3.test)
+
+march_madness22preds <- predict(ensemble.xg, as.matrix(testData))
+march_madness22preds <- as.numeric(march_madness22preds)
+confusionMatrix(factor(march_madness22preds), factor(MarchMadness22$binaryresult))
+
+MarchMadness22
+arrange(MarchMadness22, MarchMadness22$date.y)
+
+```
+# Bracket 
+```{r}
+march_madness22predsdf <- as.data.frame(march_madness22preds)
+march_madness22predsdf$team1.y <- MarchMadness22$team1.y
+march_madness22predsdf$team2.y <- MarchMadness22$team2.y
+march_madness22predsdf$realresult <- MarchMadness22$binaryresult
+march_madness22predsdf$date <- MarchMadness22$date.y
+march_madness22predsdf
+arrange(march_madness22predsdf, date)
+
+Gonzaga <- MarchMadness22[9, 139:220]
+BoiseState <- MarchMadness22[51, 57:138]
+GonzagavBoiseState <- cbind(BoiseState, Gonzaga)
+R32 <- GonzagavBoiseState
+
+T1T2ColNames <- colnames(GonzagavBoiseState)
+
+NewMexicoState <- MarchMadness22[35, 139:220]
+Vermont <- MarchMadness22[32, 139:220]
+VermontvNewMexicoState <- cbind(Vermont, NewMexicoState)
+colnames(VermontvNewMexicoState) <- T1T2ColNames
+R32 <- rbind(R32, VermontvNewMexicoState)
+
+Alabama <- MarchMadness22[43, 139:220]
+TexasTech <- MarchMadness22[50, 57:138]
+TexasTechvAlabama <- cbind(TexasTech, Alabama)
+R32 <- rbind(R32, TexasTechvAlabama)
+
+MichiganSt. <- MarchMadness22[56, 139:220]
+Duke <- MarchMadness22[19, 139:220]
+DukevMich <- cbind(Duke, MichiganSt.)
+colnames(DukevMich) <- T1T2ColNames
+R32 <- rbind(R32, DukevMich)
+
+
+NorfolkSt. <- MarchMadness22[59, 139:220]
+Marquette <- MarchMadness22[63, 57:138]
+MarqvNorfolk <- cbind(Marquette, NorfolkSt.)
+R32 <- rbind(R32, MarqvNorfolk)
+
+
+SaintMarys <- MarchMadness22[24, 57:138]
+UCLA <- MarchMadness22[6, 139:220]
+SaintMarysvUCLA <- cbind(SaintMarys, UCLA)
+R32 <- rbind(R32, SaintMarysvUCLA)
+
+
+VTech <- MarchMadness22[14, 139:220]
+Purdue <- MarchMadness22[5, 139:220]
+VtechvPurdue <- cbind(VTech, Purdue)
+colnames(VtechvPurdue) <- T1T2ColNames
+R32 <- rbind(R32, VtechvPurdue)
+
+SFState <- MarchMadness22[57, 139:220]
+SaintPeter <- MarchMadness22[4, 139:220]
+SFStatevSaintPeter <- cbind(SFState, SaintPeter)
+colnames(SFStatevSaintPeter) <- T1T2ColNames
+R32 <- rbind(R32, SFStatevSaintPeter)
+
+Arizona <- MarchMadness22[23, 139:220]
+SetonHall <- MarchMadness22[62, 57:138]
+SetonHallvArizona <- cbind(SetonHall, Arizona)
+R32 <- rbind(R32, SetonHallvArizona)
+
+UAB <- MarchMadness22[27, 139:220]
+Chattanooga <- MarchMadness22[65, 57:138]
+ChattanoogavUAB <- cbind(Chattanooga, UAB)
+R32 <- rbind(R32, ChattanoogavUAB)
+
+ColoradoState <- MarchMadness22[58, 57:138]
+Tennessee <- MarchMadness22[12, 139:220]
+CStatevTennessee <- cbind(ColoradoState, Tennessee)
+R32 <- rbind(R32, CStatevTennessee)
+
+
+LoyolaChicago <- MarchMadness22[49, 57:138]
+Villanova <- MarchMadness22[66, 57:138]
+LoyolaChicagovVillanova <- cbind(LoyolaChicago, Villanova)
+colnames(LoyolaChicagovVillanova) <- T1T2ColNames
+R32 <- rbind(R32, LoyolaChicagovVillanova)
+
+Kansas <- MarchMadness22[17, 139:220]
+SanDiego <- MarchMadness22[60, 139:220]
+KansasvSanDiego <- cbind(Kansas, SanDiego)
+colnames(KansasvSanDiego) <- T1T2ColNames
+R32 <- rbind(R32, KansasvSanDiego)
+
+Iowa <- MarchMadness22[8, 57:138]
+Providence <- MarchMadness22[41, 57:138]
+IowavProvidence <- cbind(Iowa, Providence)
+colnames(IowavProvidence) <- T1T2ColNames
+R32 <- rbind(R32, IowavProvidence)
+
+IowaSt. <- MarchMadness22[53, 57:138]
+Colgate <- MarchMadness22[7, 57:138]
+IowaStvColgate <- cbind(IowaSt., Colgate)
+colnames(IowaStvColgate) <- T1T2ColNames
+R32 <- rbind(R32, IowaStvColgate)
+
+
+USC <- MarchMadness22[48, 139:220]
+Auburn <- MarchMadness22[46, 139:220]
+USCvAuburn <- cbind(USC, Auburn)
+colnames(USCvAuburn) <- T1T2ColNames
+R32 <- rbind(R32, USCvAuburn)
+
+
+modelData.R322022 <- R32[,c("T1eFG..Def", "T1eFG.", "T2eFG..Def", "T2eFG.", "T1FTR", "T2FTR", "T1TO.", "T1TO..Def.", "T2TO.", "T2TO..Def.", "T12p.", "T13P.", "T22p.", "T23P.")]
+diff.xg.test <- as.numeric(predict(xg.model, as.matrix(modelData.R322022)))
+diff.lm.test <- predict(l.model.int.step, R32)
+R32_testing2 <- R32[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG.", "T1eFG..Def", "T1FTR", "T1FTR.Def", "T1TO.", "T1TO..Def.", "T13P.", "T13pD.", "T1ft.", "T12p.D", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD", "T2adjoe", "T2conf", "T2adjde", "T2sos", "T2ncsos", "T2consos", "T2Opp.OE", "T2Opp.DE", "T2Con.Adj.OE", "T2Con.Adj.DE","T2winRate", "T2eFG.", "T2eFG..Def", "T2FTR", "T2FTR.Def", "T2TO.", "T2TO..Def.", "T23P.", "T23pD.", "T2ft.", "T22p.D", "T2ft.D", "T23P.rate", "T23P.rate.D", "T2arate", "T2arateD")]
+R32_testing2$T1conf <- as.numeric(as.factor(R32_testing2$T1conf))
+R32_testing2$T2conf <- as.numeric(as.factor(R32_testing2$T2conf))
+mm2.test <- predict(march_model_2, as.matrix(R32_testing2))
+R32_testing3 <- R32[,c("T1adjoe", "T1adjde", "T1sos", "T1winRate", "T2adjoe", "T2adjde", "T2sos", "T2winRate")]
+mm3.test <- predict(march_model_3, as.matrix(R32_testing3))
+R32_testingdf <- data.frame("diff.xg" = diff.xg.test, "diff.lm" = diff.lm.test,
+                       "mm2" = mm2.test, "mm3" = mm3.test)
+
+R32
+march_testing3
+
+R32_preds <- predict(ensemble.xg, as.matrix(R32_testingdf))
+R32_preds <- as.numeric(R32_preds>0.5)
+R32_preds_df <- as.data.frame(R32_preds)
+R32_preds_df$T1team <- R32$T1team
+R32_preds_df$T2team <- R32$T2team
+R32_preds_df
+
+VermontvNewMexicoState
+
+
+
+```
+# Round of 16
+```{r}
+BoiseStatevNewMexico<- cbind(BoiseState, NewMexicoState)
+colnames(BoiseStatevNewMexico) <- T1T2ColNames
+R16 <- BoiseStatevNewMexico
+
+AlabamavDuke <- cbind(Alabama, Duke)
+colnames(AlabamavDuke) <- T1T2ColNames
+R16 <- rbind(R16, AlabamavDuke)
+
+NorfolkStvUCLA <- cbind(NorfolkSt., UCLA)
+colnames(NorfolkStvUCLA) <- T1T2ColNames
+R16 <- rbind(R16, NorfolkStvUCLA)
+
+
+VTechvSaintPeters <- cbind(VTech, SaintPeter)
+colnames(VTechvSaintPeters) <- T1T2ColNames
+R16 <- rbind(R16, VTechvSaintPeters)
+
+ArizonavUAB <- cbind(Arizona, SetonHall)
+colnames(ArizonavUAB) <- T1T2ColNames
+R16 <- rbind(R16, ArizonavUAB)
+
+ColoradoStvLoyolaChicago <- cbind(ColoradoState, LoyolaChicago)
+colnames(ColoradoStvLoyolaChicago) <- T1T2ColNames
+R16 <- rbind(R16, ColoradoStvLoyolaChicago)
+
+SanDiegoStvIowa <- cbind(SanDiego, Iowa)
+colnames(SanDiegoStvIowa) <- T1T2ColNames
+R16 <- rbind(R16, SanDiegoStvIowa)
+
+ColgatevUSC <- cbind(Colgate, USC)
+colnames(ColgatevUSC) <- T1T2ColNames
+R16 <- rbind(R16, ColgatevUSC)
+
+modelData.R162022 <- R16[,c("T1eFG..Def", "T1eFG.", "T2eFG..Def", "T2eFG.", "T1FTR", "T2FTR", "T1TO.", "T1TO..Def.", "T2TO.", "T2TO..Def.", "T12p.", "T13P.", "T22p.", "T23P.")]
+diff.xg.test <- as.numeric(predict(xg.model, as.matrix(modelData.R162022)))
+diff.lm.test <- predict(l.model.int.step, R16)
+R16_testing2 <- R16[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG.", "T1eFG..Def", "T1FTR", "T1FTR.Def", "T1TO.", "T1TO..Def.", "T13P.", "T13pD.", "T1ft.", "T12p.D", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD", "T2adjoe", "T2conf", "T2adjde", "T2sos", "T2ncsos", "T2consos", "T2Opp.OE", "T2Opp.DE", "T2Con.Adj.OE", "T2Con.Adj.DE","T2winRate", "T2eFG.", "T2eFG..Def", "T2FTR", "T2FTR.Def", "T2TO.", "T2TO..Def.", "T23P.", "T23pD.", "T2ft.", "T22p.D", "T2ft.D", "T23P.rate", "T23P.rate.D", "T2arate", "T2arateD")]
+R16_testing2$T1conf <- as.numeric(as.factor(R16_testing2$T1conf))
+R16_testing2$T2conf <- as.numeric(as.factor(R16_testing2$T2conf))
+mm2.test <- predict(march_model_2, as.matrix(R16_testing2))
+R16_testing3 <- R16[,c("T1adjoe", "T1adjde", "T1sos", "T1winRate", "T2adjoe", "T2adjde", "T2sos", "T2winRate")]
+mm3.test <- predict(march_model_3, as.matrix(R16_testing3))
+R16_testingdf <- data.frame("diff.xg" = diff.xg.test, "diff.lm" = diff.lm.test,
+                       "mm2" = mm2.test, "mm3" = mm3.test)
+R16_preds <- predict(ensemble.xg, as.matrix(R16_testingdf))
+R16_preds <- as.numeric(R16_preds>0.5)
+R16_preds_df <- as.data.frame(R16_preds)
+R16_preds_df$T1team <- R16$T1team
+R16_preds_df$T2team <- R16$T2team
+R16_preds_df
+
+```
+# Elite 8
+```{r}
+NewMexicoStatevAlabama <- cbind(NewMexicoState, Alabama)
+colnames(NewMexicoStatevAlabama) <- T1T2ColNames
+E8 <- NewMexicoStatevAlabama
+
+UCLAvSaintPeters <- cbind(UCLA, SaintPeter)
+colnames(UCLAvSaintPeters) <- T1T2ColNames
+E8 <- rbind(E8, UCLAvSaintPeters)
+
+SetonHallvColoradoState <- cbind(SetonHall, ColoradoState)
+colnames(SetonHallvColoradoState) <- T1T2ColNames
+E8 <- rbind(E8, SetonHallvColoradoState)
+
+SanDiegoStvUSC <- cbind(SanDiego, USC)
+colnames(SanDiegoStvUSC) <- T1T2ColNames
+E8 <- rbind(E8, SanDiegoStvUSC)
+
+modelData.E82022 <- E8[,c("T1eFG..Def", "T1eFG.", "T2eFG..Def", "T2eFG.", "T1FTR", "T2FTR", "T1TO.", "T1TO..Def.", "T2TO.", "T2TO..Def.", "T12p.", "T13P.", "T22p.", "T23P.")]
+diff.xg.test <- as.numeric(predict(xg.model, as.matrix(modelData.E82022)))
+diff.lm.test <- predict(l.model.int.step, E8)
+E8_testing2 <- E8[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG.", "T1eFG..Def", "T1FTR", "T1FTR.Def", "T1TO.", "T1TO..Def.", "T13P.", "T13pD.", "T1ft.", "T12p.D", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD", "T2adjoe", "T2conf", "T2adjde", "T2sos", "T2ncsos", "T2consos", "T2Opp.OE", "T2Opp.DE", "T2Con.Adj.OE", "T2Con.Adj.DE","T2winRate", "T2eFG.", "T2eFG..Def", "T2FTR", "T2FTR.Def", "T2TO.", "T2TO..Def.", "T23P.", "T23pD.", "T2ft.", "T22p.D", "T2ft.D", "T23P.rate", "T23P.rate.D", "T2arate", "T2arateD")]
+E8_testing2$T1conf <- as.numeric(as.factor(E8_testing2$T1conf))
+E8_testing2$T2conf <- as.numeric(as.factor(E8_testing2$T2conf))
+mm2.test <- predict(march_model_2, as.matrix(E8_testing2))
+E8_testing3 <- E8[,c("T1adjoe", "T1adjde", "T1sos", "T1winRate", "T2adjoe", "T2adjde", "T2sos", "T2winRate")]
+mm3.test <- predict(march_model_3, as.matrix(E8_testing3))
+E8_testingdf <- data.frame("diff.xg" = diff.xg.test, "diff.lm" = diff.lm.test,
+                       "mm2" = mm2.test, "mm3" = mm3.test)
+E8_preds <- predict(ensemble.xg, as.matrix(E8_testingdf))
+E8_preds <- as.numeric(E8_preds>0.5)
+E8_preds_df <- as.data.frame(E8_preds)
+E8_preds_df$T1team <- E8$T1team
+E8_preds_df$T2team <- E8$T2team
+E8_preds_df
+
+
+
+
+```
+# Final 4
+```{r}
+NewMexicoStatevSaintPeters <- cbind(NewMexicoState, SaintPeter)
+colnames(NewMexicoStatevSaintPeters) <- T1T2ColNames
+F4 <- NewMexicoStatevSaintPeters
+
+SetonHallvUSC <- cbind(SetonHall, USC)
+colnames(SetonHallvUSC) <- T1T2ColNames
+F4 <- rbind(F4, SetonHallvUSC)
+
+modelData.F42022 <- F4[,c("T1eFG..Def", "T1eFG.", "T2eFG..Def", "T2eFG.", "T1FTR", "T2FTR", "T1TO.", "T1TO..Def.", "T2TO.", "T2TO..Def.", "T12p.", "T13P.", "T22p.", "T23P.")]
+diff.xg.test <- as.numeric(predict(xg.model, as.matrix(modelData.F42022)))
+diff.lm.test <- predict(l.model.int.step, F4)
+F4_testing2 <- F4[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG.", "T1eFG..Def", "T1FTR", "T1FTR.Def", "T1TO.", "T1TO..Def.", "T13P.", "T13pD.", "T1ft.", "T12p.D", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD", "T2adjoe", "T2conf", "T2adjde", "T2sos", "T2ncsos", "T2consos", "T2Opp.OE", "T2Opp.DE", "T2Con.Adj.OE", "T2Con.Adj.DE","T2winRate", "T2eFG.", "T2eFG..Def", "T2FTR", "T2FTR.Def", "T2TO.", "T2TO..Def.", "T23P.", "T23pD.", "T2ft.", "T22p.D", "T2ft.D", "T23P.rate", "T23P.rate.D", "T2arate", "T2arateD")]
+F4_testing2$T1conf <- as.numeric(as.factor(F4_testing2$T1conf))
+F4_testing2$T2conf <- as.numeric(as.factor(F4_testing2$T2conf))
+mm2.test <- predict(march_model_2, as.matrix(F4_testing2))
+F4_testing3 <- F4[,c("T1adjoe", "T1adjde", "T1sos", "T1winRate", "T2adjoe", "T2adjde", "T2sos", "T2winRate")]
+mm3.test <- predict(march_model_3, as.matrix(F4_testing3))
+F4_testingdf <- data.frame("diff.xg" = diff.xg.test, "diff.lm" = diff.lm.test,
+                       "mm2" = mm2.test, "mm3" = mm3.test)
+F4_preds <- predict(ensemble.xg, as.matrix(F4_testingdf))
+F4_preds <- as.numeric(F4_preds>0.5)
+F4_preds_df <- as.data.frame(F4_preds)
+F4_preds_df$T1team <- F4$T1team
+F4_preds_df$T2team <- F4$T2team
+F4_preds_df
+
+
+```
+# Championship Game
+```{r}
+SaintPetersvUSC <- cbind(USC, SaintPeter)
+colnames(SaintPetersvUSC) <- T1T2ColNames
+c <- SaintPetersvUSC
+modelData.c2022 <- c[,c("T1eFG..Def", "T1eFG.", "T2eFG..Def", "T2eFG.", "T1FTR", "T2FTR", "T1TO.", "T1TO..Def.", "T2TO.", "T2TO..Def.", "T12p.", "T13P.", "T22p.", "T23P.")]
+diff.xg.test <- as.numeric(predict(xg.model, as.matrix(modelData.c2022)))
+diff.lm.test <- predict(l.model.int.step, c)
+c_testing2 <- c[,c("T1adjoe", "T1conf", "T1adjde", "T1sos", "T1ncsos", "T1consos", "T1Opp.OE", "T1Opp.DE", "T1Con.Adj.OE", "T1Con.Adj.DE","T1winRate", "T1eFG.", "T1eFG..Def", "T1FTR", "T1FTR.Def", "T1TO.", "T1TO..Def.", "T13P.", "T13pD.", "T1ft.", "T12p.D", "T1ft.D", "T13P.rate", "T13P.rate.D", "T1arate", "T1arateD", "T2adjoe", "T2conf", "T2adjde", "T2sos", "T2ncsos", "T2consos", "T2Opp.OE", "T2Opp.DE", "T2Con.Adj.OE", "T2Con.Adj.DE","T2winRate", "T2eFG.", "T2eFG..Def", "T2FTR", "T2FTR.Def", "T2TO.", "T2TO..Def.", "T23P.", "T23pD.", "T2ft.", "T22p.D", "T2ft.D", "T23P.rate", "T23P.rate.D", "T2arate", "T2arateD")]
+c_testing2$T1conf <- as.numeric(as.factor(c_testing2$T1conf))
+c_testing2$T2conf <- as.numeric(as.factor(c_testing2$T2conf))
+mm2.test <- predict(march_model_2, as.matrix(c_testing2))
+c_testing3 <- c[,c("T1adjoe", "T1adjde", "T1sos", "T1winRate", "T2adjoe", "T2adjde", "T2sos", "T2winRate")]
+mm3.test <- predict(march_model_3, as.matrix(c_testing3))
+c_testingdf <- data.frame("diff.xg" = diff.xg.test, "diff.lm" = diff.lm.test,
+                       "mm2" = mm2.test, "mm3" = mm3.test)
+c_preds <- predict(ensemble.xg, as.matrix(c_testingdf))
+c_preds <- as.numeric(c_preds>0.5)
+c_preds_df <- as.data.frame(c_preds)
+c_preds_df$T1team <- c$T1team
+c_preds_df$T2team <- c$T2team
+c_preds_df
 ```
 
 

@@ -175,6 +175,7 @@ matrix_march_training <- as.matrix(march_training[,-c(159:164)])
 
 # XGBoost Model 1
 ```{r}
+set.seed(132)
 march_model <- xgboost(data = matrix_march_training, label = as.matrix(training_labels), max.depth = 2, eta = 0.3, nthread = 2, nrounds = 500, model = "binary:logistic")
 
 ```
@@ -235,6 +236,9 @@ confusionMatrix(factor(pred3), factor(MarchMadness22$binaryresult))
 importance_matrix3 <- xgb.importance(model = march_model_3)
 xgb.plot.importance(importance_matrix3, top_n = 8)
 save(march_model_3, file = "march_model_3.RData")
+```
+```{r}
+readRDS("diff_xg_model.RData")
 ```
 
 
